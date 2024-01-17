@@ -48,7 +48,8 @@ def signIn(request):
                         cop_acc = Copart_Account.objects.get(member_number=number)
                         account_data=CopartSerializer(cop_acc).data
                         copart_accounts.append(account_data)
-                    return JsonResponse({'success': True,"data":copart_accounts})
+                    profile={"username":username, "accounts":copart_accounts}
+                    return JsonResponse({'success': True,"profile":profile})
                     
                 else:
                     return JsonResponse({'error':True,'message': 'No user with these credentials'})
