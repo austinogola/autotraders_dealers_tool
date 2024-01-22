@@ -16,13 +16,26 @@ chrome.runtime.onConnect.addListener((port)=>{
             let {username,password}=message
             let copartCreds=await dealerSignIn(username,password)
             port.postMessage({dealerStatus:copartCreds})
-            console.log(copartCreds);
+            // console.log(copartCreds);
             if(copartCreds.success){
                 let {profile}=copartCreds
-                chrome.storage.local.set({ copartProfile: profile }).then(() => {
-                    console.log("copartProfile Value is set to",profile);
-                  });
+                chrome.storage.local.set({ copartProfile: profile })
             }
+        }
+        if(message.signInTo){
+            clearCopart()
+            const selected_copart_account=message.signInTo
+            chrome.storage.local.set({ selected_copart_account }).then(() => {
+                console.log("copart account chosen: ",selected_copart_account);
+                chrome.tabs.create({url:'https://www.copart.com/login/'})
+              });
+        }
+        if(message.signOut){
+            clearCopart()
+            chrome.storage.local.set({ copartProfile: {} })
+            chrome.storage.local.remove('copart_member_number')
+            // chrome.storage.local.set({ selected_copart_account })
+            // console.log(message);
         }
     })
 })
@@ -34,6 +47,22 @@ const getCsrfToken=()=>{
             resolve (ck[0].value)
         })
     })
+}
+
+const  clearCopart=()=>{
+
+    chrome.browsingData.remove({
+        "origins": ["https://www.copart.com"]
+    }, {
+        "cacheStorage": true,
+        "cookies": true,
+        "fileSystems": true,
+        "indexedDB": true,
+        "localStorage": true,
+        "serviceWorkers": true,
+        "webSQL": true
+    }, console.log);
+
 }
 
 const getCopartCookies=()=>{
@@ -82,11 +111,11 @@ const dealerSignIn=(username,password)=>{
 
 // dealerSignIn('austin','austin254')
 //JSESSIONID
-chrome.cookies.onChanged.addListener((changeInfo)=>{
-    let ck=changeInfo.cookie
-    let copartCks=ck.domain.includes('copart') && (ck.name=='G2JSESSIONID' || ck.name=='JSESSIONID')
-    if(copartCks){
-        // console.log(changeInfo);
-    }
-})
+// chrome.cookies.onChanged.addListener((changeInfo)=>{
+//     let ck=changeInfo.cookie
+//     let copartCks=ck.domain.includes('copart') && (ck.name=='G2JSESSIONID' || ck.name=='JSESSIONID')
+//     if(copartCks){
+//         // console.log(changeInfo);
+//     }
+// })
 

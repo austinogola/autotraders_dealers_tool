@@ -23,8 +23,8 @@
         "default_popup":"popup.html"
     },
     "content_scripts":[{
-      "matches":["<all_urls>"],
-      "js":["jquery.js","content.js"],
+      "matches":["https://*.copart.com/*","https://copart.com/*"],
+      "js":["content/jquery.js","content.js","content/login.js"],
       "run_at": "document_start",
       "all_frames": true
       }]
