@@ -119,3 +119,78 @@ const dealerSignIn=(username,password)=>{
 //     }
 // })
 
+let reqHeaders={}
+
+const makeCurrentHeaders=(headersArr)=>{
+    headersArr.forEach(item=>{
+        reqHeaders[item.name]=item.value
+    })
+}
+
+const duplicateRequest=(requestDetails)=>{
+    let {url,requestHeaders,method}=requestDetails
+    
+    let heads={}
+    requestHeaders.forEach(val=>{
+        heads[val.name]=val.value
+    })
+
+    
+    fetch(url,{method:method,headers:heads})
+    .then(async res=>{
+        if(res.status==200){
+            let resBody=await res.json()
+            console.log(url,resBody);
+
+        }else{
+            console.log(`Error duplicating ${url} `);
+        }
+
+    })
+    .catch(err=>{
+            console.log('error',`(${url})`,err.message);
+    })
+
+
+   
+}
+
+
+chrome.webRequest.onBeforeSendHeaders.addListener((dets)=>{
+
+    const {url}=dets
+    
+    // if(dets.method='POST' && dets.requestHeaders){
+    //     dets.requestHeaders.forEach(item=>{
+    //         if(item.name=='X-XSRF-TOKEN'){
+    //             makeCurrentHeaders(dets.requestHeaders)
+    //             return
+    //             console.log(dets);
+    //             console.log(item);
+    //         }
+    //     })
+    // } 
+    if(dets.initiator){
+        if(!(dets.initiator.includes('chrome-extension'))){
+
+
+            if(url.includes('/data/lots/') || 
+            url.includes('public/data/contactinfo') ||
+            url.includes('data/member/account/alerts') ||
+            url.includes('public/data/userConfig')){
+                duplicateRequest(dets)
+            }
+        }
+        
+    }
+    
+    
+},{urls:["https://*.copart.com/*","https://copart.com/*"]},["requestHeaders","extraHeaders"])
+
+let times
+
+// https://www.copart.com/data/lots/watchList
+
+// https://www.copart.com/data/bidder-numbers
+
+// https://www.copart.com/data/lots/myBids/286042/0
