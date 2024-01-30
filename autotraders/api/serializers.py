@@ -20,7 +20,7 @@ class BidderSerializer(serializers.ModelSerializer):
 class BidSerializer(serializers.ModelSerializer):
     class Meta:
         model=Bid
-        fields=('timestamp','lot_number','vin_number','bid_amount','current_status','username')
+        fields=('timestamp','lot','VIN','bid_amount','current_status','username')
 
 
 

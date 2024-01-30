@@ -39,8 +39,8 @@ class Bid(models.Model):
     ]
    
     timestamp = models.DateTimeField(auto_now_add=True)
-    lot = models.CharField(max_length=255)
-    VIN = models.CharField(max_length=30)
+    lot = models.CharField(max_length=50)
+    VIN = models.CharField(max_length=50)
     bid_amount = models.DecimalField(max_digits=10, decimal_places=2)
     current_status = models.CharField(max_length=10,choices=CURRENT_STATUS_CHOICES, default='winning')
     # bid_numbers = ArrayField(models.IntegerField(), blank=True, null=True)
@@ -50,7 +50,7 @@ class Bid(models.Model):
 
 
     def __str__(self):
-        return str(self.vin_number)
+        return str(self.VIN)
 
 
 class Copart_Account(models.Model):

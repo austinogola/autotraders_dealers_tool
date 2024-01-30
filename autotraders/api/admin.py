@@ -53,11 +53,14 @@ class BidderAdmin(admin.ModelAdmin):
 admin.site.register(Bidder, BidderAdmin)
 # admin.site.register(Bidder)
 
+class BidAdmin(admin.ModelAdmin):
+    list_display = ('timestamp','lot','VIN', 'bid_amount','current_status','username')  # Customize this based on your model fields
 
+    search_fields = ['timestamp','lot','VIN', 'bid_amount','current_status','username'] 
+    def save_model(self, request, obj, form, change):
+        
 
+        return super().save_model(request, obj, form, change)
 
-admin.site.register(Bid)
-
-# admin.site.register(Copart_Account)
-# admin.site.register(Bidder)
+admin.site.register(Bid, BidAdmin)
 # admin.site.register(Bid)

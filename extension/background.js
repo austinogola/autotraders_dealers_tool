@@ -86,26 +86,30 @@ const copartSignIn=()=>{
 }
 
 
-
-
-const dealerSignIn=(username,password)=>{
+const apiFetch=(path,method,body)=>{
     return new Promise(async(resolve, reject) => {
         let csrfToken=await getCsrfToken()
-        let params=`u=${username}&p=${password}`
-        fetch(HOST+'auth/signin',{
-            method:'POST',
+        fetch(HOST+path,{
+            method:method,
             headers:{
                 'Content-Type':'application/json',
                 'X-CSRFToken': csrfToken
             },
-            body:JSON.stringify({username,password})
+            body:body?JSON.stringify(body):null
         }).then(async response=>{
-            let res=await response.json()
-            if(response.status==200){
-                resolve(res)
-            }
+            resolve(response)
             
         })
+    })
+}
+
+
+const dealerSignIn=(username,password)=>{
+    return new Promise(async(resolve, reject) => {
+        let params=`u=${username}&p=${password}`
+        let response = await apiFetch('auth/signin','POST',{username,password})
+        let res=await response.json()
+        resolve(res)
     })
 }
 
@@ -127,30 +131,116 @@ const makeCurrentHeaders=(headersArr)=>{
     })
 }
 
+let exampleBids=[
+    {
+        bidStatusStr:'Winning',
+        currentBid:3750,
+        lotNumber:76582881,
+        lotId:'76582881',
+        vehicleIdentificationNumber:'HNDJN56342A21G7402953',
+        
+    },
+    {
+        bidStatusStr:'Winning',
+        currentBid:2150,
+        lotNumber:76382083,
+        lotId:'76382083',
+        vehicleIdentificationNumber:'KNDJN2A2A21G7402953',
+        
+    },
+    {
+        bidStatusStr:'Winning',
+        currentBid:4110,
+        lotNumber:67382063,
+        lotId:'67382063',
+        vehicleIdentificationNumber:'MDDJN2A232157402Z53',
+        
+    },
+    // {
+    //     bidStatusStr:'Winning',
+    //     currentBid:3750,
+    //     lotNumber:193820846,
+    //     lotId:'193820846',
+    //     vehicleIdentificationNumber:'BKDJN2A2A2147202916',
+        
+    // },
+    // {
+    //     bidStatusStr:'Winning',
+    //     currentBid:3850,
+    //     lotNumber:98174081,
+    //     lotId:'98174081',
+    //     vehicleIdentificationNumber:'LPMJN2A2A21G2402939',
+        
+    // }
+]
+
+let exampleBid1
+const handleBids=(bids)=>{
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get('copart_member_number').then(async result=>{
+            if(result.copart_member_number){
+                let member_number=result.copart_member_number
+                console.log('Sending',member_number,bids);
+                let bidsArr=[]
+                // exampleBids
+                bids.forEach(async item=>{
+                    //I need -->timestamp, /lot, VIN, /bid_amount, /current_status,username,bidder
+                    const {bidStatusStr,currentBid,lotNumber,lotId,vehicleIdentificationNumber}=item
+                    const bidObj={
+                        lot:lotId,
+                        VIN:vehicleIdentificationNumber,
+                        bid_amount:currentBid,
+                        current_status:bidStatusStr
+                    }
+                    bidsArr.push(bidObj)
+                 })
+                 let response = await apiFetch(`bids/add/${member_number}`,'POST',{bids:bidsArr})
+                let res=await response.json()
+                console.log(res);
+                
+            }
+        })
+        
+    })
+}
 const duplicateRequest=(requestDetails)=>{
-    let {url,requestHeaders,method}=requestDetails
-    
-    let heads={}
-    requestHeaders.forEach(val=>{
-        heads[val.name]=val.value
-    })
+    let {url,requestHeaders,method,initiator}=requestDetails
+        let heads={}
+        let referer
+        requestHeaders.forEach(val=>{
+            heads[val.name]=val.value
+            if(val.name=='Referer'){
+                referer=val.value
+            }
+        })
+        heads['Origin']=initiator
+        heads['Referer']=referer
+        fetch(url,{method:method,headers:heads})
+        .then(async res=>{
+            if(res.status==200){
+                let resBody=await res.json()
+                // console.log(url,resBody);
+                // console.log(url);
+                if(url.includes('/data/lots/') || url.includes('/lotsWon')){
+                    console.log(url,resBody,requestDetails);
+                    if(resBody.aaData){
+                        let bidsArr=[...resBody.aaData]
+                        handleBids(bidsArr)
+                    }
+                    
+                }else if(url.includes('/data/userConfig/')){
 
-    
-    fetch(url,{method:method,headers:heads})
-    .then(async res=>{
-        if(res.status==200){
-            let resBody=await res.json()
-            console.log(url,resBody);
+                }
+                
 
-        }else{
-            console.log(`Error duplicating ${url} `);
-        }
+            }else{
+                console.log(`Error duplicating ${url} `);
+            }
 
-    })
-    .catch(err=>{
-            console.log('error',`(${url})`,err.message);
-    })
-
+        })
+        .catch(err=>{
+                console.log('error',`(${url})`,err.message);
+        })
 
    
 }
@@ -175,6 +265,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener((dets)=>{
 
 
             if(url.includes('/data/lots/') || 
+            url.includes('bidStatus/lotsWon') ||
             url.includes('public/data/contactinfo') ||
             url.includes('data/member/account/alerts') ||
             url.includes('public/data/userConfig')){
