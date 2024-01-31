@@ -1,6 +1,6 @@
 {
     "name": "Autotraders",
-    "description": "Track bids on Copartnnn",
+    "description": "Track bids on Copart",
     "version": "1.1.0",
     "manifest_version": 3,
     "permissions":[

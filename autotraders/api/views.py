@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from django.http import JsonResponse
 from .serializers import BidderSerializer, CopartSerializer,BidSerializer
+from datetime import datetime
 
 
 # Create your views here.
@@ -48,6 +49,7 @@ def addBid(request,id):
                         bid_data=BidSerializer(prevBid).data
                         if(bid_data["current_status"] != current_status):
                             prevBid.current_status=current_status
+                            # prevBid.status_change=datetime.now()
                             prevBid.save()
                             print('modified')
 

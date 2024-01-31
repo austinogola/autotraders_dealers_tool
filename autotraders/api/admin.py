@@ -57,6 +57,9 @@ class BidAdmin(admin.ModelAdmin):
     list_display = ('timestamp','lot','VIN', 'bid_amount','current_status','username')  # Customize this based on your model fields
 
     search_fields = ['timestamp','lot','VIN', 'bid_amount','current_status','username'] 
+
+    def status_change(self,obj):
+        return obj.timestamp
     def save_model(self, request, obj, form, change):
         
 

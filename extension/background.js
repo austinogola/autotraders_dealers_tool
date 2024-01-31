@@ -5,50 +5,6 @@ importScripts(
 const HOST=`http://127.0.0.1:8000/`
 const DOMAIN=`127.0.0.1`
 
-
-chrome.runtime.onMessage.addListener(async(request, sender, sendResponse)=>{
-
-})
-
-chrome.runtime.onConnect.addListener((port)=>{
-    port.onMessage.addListener(async(message,port)=>{
-        if(message.dealerSign){
-            let {username,password}=message
-            let copartCreds=await dealerSignIn(username,password)
-            port.postMessage({dealerStatus:copartCreds})
-            // console.log(copartCreds);
-            if(copartCreds.success){
-                let {profile}=copartCreds
-                chrome.storage.local.set({ copartProfile: profile })
-            }
-        }
-        if(message.signInTo){
-            clearCopart()
-            const selected_copart_account=message.signInTo
-            chrome.storage.local.set({ selected_copart_account }).then(() => {
-                console.log("copart account chosen: ",selected_copart_account);
-                chrome.tabs.create({url:'https://www.copart.com/login/'})
-              });
-        }
-        if(message.signOut){
-            clearCopart()
-            chrome.storage.local.set({ copartProfile: {} })
-            chrome.storage.local.remove('copart_member_number')
-            // chrome.storage.local.set({ selected_copart_account })
-            // console.log(message);
-        }
-    })
-})
-
-
-const getCsrfToken=()=>{
-    return new Promise(async(resolve, reject) => {
-        chrome.cookies.getAll({name:'csrftoken',domain:DOMAIN},ck=>{
-            resolve (ck[0].value)
-        })
-    })
-}
-
 const  clearCopart=()=>{
 
     chrome.browsingData.remove({
@@ -65,6 +21,16 @@ const  clearCopart=()=>{
 
 }
 
+const getCsrfToken=()=>{
+    return new Promise(async(resolve, reject) => {
+        chrome.cookies.getAll({name:'csrftoken',domain:DOMAIN},ck=>{
+            resolve (ck[0].value)
+        })
+    })
+}
+
+
+
 const getCopartCookies=()=>{
     return new Promise(async(resolve, reject) => {
         chrome.cookies.getAll({name:'csrftoken',domain:'www.copart.com'},cks=>{
@@ -78,14 +44,6 @@ const getCopartCookies=()=>{
     })
 }
 
-
-const copartSignIn=()=>{
-    return new Promise((resolve, reject) => {
-        
-    })
-}
-
-
 const apiFetch=(path,method,body)=>{
     return new Promise(async(resolve, reject) => {
         let csrfToken=await getCsrfToken()
@@ -97,9 +55,65 @@ const apiFetch=(path,method,body)=>{
             },
             body:body?JSON.stringify(body):null
         }).then(async response=>{
-            resolve(response)
+            let res=await response.json()
+            resolve(res)
             
         })
+        .catch(err=>{
+            resolve({error:true,message:err.message})
+        })
+    })
+}
+
+chrome.runtime.onInstalled.addListener(async(dets)=>{
+    clearCopart()
+    chrome.storage.local.clear()
+  })
+
+
+
+chrome.runtime.onMessage.addListener(async(request, sender, sendResponse)=>{
+
+})
+
+chrome.runtime.onConnect.addListener((port)=>{
+    port.onMessage.addListener(async(message,port)=>{
+        if(message.dealerSign){
+            let {username,password}=message
+            let copartCreds=await dealerSignIn(username,password)
+            // console.log(copartCreds);
+            port.postMessage({dealerStatus:copartCreds})
+            // console.log(copartCreds);
+            if(copartCreds.success){
+                let {profile}=copartCreds
+                chrome.storage.local.set({ copartProfile: profile })
+            }
+        }
+        if(message.signInTo){
+            clearCopart()
+            const selected_copart_account=message.signInTo
+            chrome.storage.local.set({ selected_copart_account }).then(() => {
+                // console.log("copart account chosen: ",selected_copart_account);
+                chrome.tabs.create({url:'https://www.copart.com/login/'})
+              });
+        }
+        if(message.signOut){
+            clearCopart()
+            chrome.storage.local.set({ copartProfile: {} })
+            chrome.storage.local.remove('copart_member_number')
+            // chrome.storage.local.set({ selected_copart_account })
+            // console.log(message);
+        }
+    })
+})
+
+
+
+
+
+const copartSignIn=()=>{
+    return new Promise((resolve, reject) => {
+        
     })
 }
 
@@ -108,8 +122,9 @@ const dealerSignIn=(username,password)=>{
     return new Promise(async(resolve, reject) => {
         let params=`u=${username}&p=${password}`
         let response = await apiFetch('auth/signin','POST',{username,password})
-        let res=await response.json()
-        resolve(res)
+        // console.log(response);
+        // let res=await response.json()
+        resolve(response)
     })
 }
 
@@ -141,7 +156,7 @@ let exampleBids=[
         
     },
     {
-        bidStatusStr:'Winning',
+        bidStatusStr:'Won',
         currentBid:2150,
         lotNumber:76382083,
         lotId:'76382083',
@@ -149,21 +164,21 @@ let exampleBids=[
         
     },
     {
-        bidStatusStr:'Winning',
+        bidStatusStr:'Outbid',
         currentBid:4110,
         lotNumber:67382063,
         lotId:'67382063',
         vehicleIdentificationNumber:'MDDJN2A232157402Z53',
         
     },
-    // {
-    //     bidStatusStr:'Winning',
-    //     currentBid:3750,
-    //     lotNumber:193820846,
-    //     lotId:'193820846',
-    //     vehicleIdentificationNumber:'BKDJN2A2A2147202916',
+    {
+        bidStatusStr:'Winning',
+        currentBid:3750,
+        lotNumber:193820846,
+        lotId:'193820846',
+        vehicleIdentificationNumber:'BKDJN2A2A2147202916',
         
-    // },
+    },
     // {
     //     bidStatusStr:'Winning',
     //     currentBid:3850,
@@ -183,7 +198,7 @@ const handleBids=(bids)=>{
                 console.log('Sending',member_number,bids);
                 let bidsArr=[]
                 // exampleBids
-                bids.forEach(async item=>{
+                exampleBids.forEach(async item=>{
                     //I need -->timestamp, /lot, VIN, /bid_amount, /current_status,username,bidder
                     const {bidStatusStr,currentBid,lotNumber,lotId,vehicleIdentificationNumber}=item
                     const bidObj={
@@ -195,8 +210,8 @@ const handleBids=(bids)=>{
                     bidsArr.push(bidObj)
                  })
                  let response = await apiFetch(`bids/add/${member_number}`,'POST',{bids:bidsArr})
-                let res=await response.json()
-                console.log(res);
+                // let res=await response.json()
+                // console.log(res);
                 
             }
         })
@@ -222,7 +237,7 @@ const duplicateRequest=(requestDetails)=>{
                 // console.log(url,resBody);
                 // console.log(url);
                 if(url.includes('/data/lots/') || url.includes('/lotsWon')){
-                    console.log(url,resBody,requestDetails);
+                    // console.log(url,resBody,requestDetails);
                     if(resBody.aaData){
                         let bidsArr=[...resBody.aaData]
                         handleBids(bidsArr)

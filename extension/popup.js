@@ -106,10 +106,16 @@ copart_select.addEventListener('change',e=>{
 
 popup_port.onMessage.addListener((msg)=>{
     if(msg.dealerStatus){
-        if(msg.dealerStatus.success){
+        const {dealerStatus}=msg
+        console.log(dealerStatus);
+        if(dealerStatus.success){
 
-        }else{
-            errorSpan.textContent=msg.dealerStatus.message
+        }
+        // else if(dealerStatus.error){
+        //     console.log(dealerStatus);
+        // }
+        else{
+            errorSpan.textContent=dealerStatus.message
             errorSpan.style.display='block'
             usernameField.style.border='1px solid #DD263E'
             passwordField.style.border='1px solid #DD263E'
