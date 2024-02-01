@@ -15,7 +15,8 @@ let copartAccounts
 let selected_copart_account
 
 const handle_copart_ui=()=>{
-    chrome.storage.local.get(["copartProfile",'selected_copart_account','copart_member_number']).then((result) => {
+    chrome.storage.local.get(["copartProfile",'selected_copart_account',
+    'copart_member_number','usernameInput','passwordInput']).then((result) => {
         if(result.copartProfile && Object.keys(result.copartProfile).includes('accounts')){
             signInForm.style.display='none'
             homePage.style.display='block'
@@ -37,6 +38,8 @@ const handle_copart_ui=()=>{
         }else{
             signInForm.style.display='block'
             homePage.style.display='none'
+            result.usernameInput?usernameField.value=result.usernameInput:null
+            result.passwordInput?passwordField.value=result.passwordInput:null
         }
 
         
@@ -60,6 +63,12 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     }
   });
 
+  usernameField.addEventListener('change',evt=>{
+    chrome.storage.local.set({usernameInput:evt.target.value})
+  })
+  passwordField.addEventListener('change',evt=>{
+    chrome.storage.local.set({passwordInput:evt.target.value})
+  })
 
 
 

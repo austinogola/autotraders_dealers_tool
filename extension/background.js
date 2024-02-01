@@ -2,8 +2,10 @@ importScripts(
     "bg/loginCtrl.js",
 )
 
-const HOST=`http://127.0.0.1:8000/`
-const DOMAIN=`127.0.0.1`
+// const HOST=`http://127.0.0.1:8000/`
+const HOST=`http://3.78.251.248:3000/`
+// const DOMAIN=`127.0.0.1`
+const DOMAIN=`3.78.251.248`
 
 const  clearCopart=()=>{
 
@@ -47,6 +49,9 @@ const getCopartCookies=()=>{
 const apiFetch=(path,method,body)=>{
     return new Promise(async(resolve, reject) => {
         let csrfToken=await getCsrfToken()
+        setTimeout(() => {
+            resolve({error:true,message:'Slow network connection'})
+        }, 10000);
         fetch(HOST+path,{
             method:method,
             headers:{
@@ -66,18 +71,24 @@ const apiFetch=(path,method,body)=>{
 }
 
 chrome.runtime.onInstalled.addListener(async(dets)=>{
-    clearCopart()
-    chrome.storage.local.clear()
+    // clearCopart()
+    // chrome.storage.local.clear()
   })
 
 
 
 chrome.runtime.onMessage.addListener(async(request, sender, sendResponse)=>{
-
+    
 })
-
+let tab_port
+let popup_port
 chrome.runtime.onConnect.addListener((port)=>{
+    if(port.name=='tab_port'){
+        tab_port=port
+        console.log(port);
+    }
     port.onMessage.addListener(async(message,port)=>{
+        
         if(message.dealerSign){
             let {username,password}=message
             let copartCreds=await dealerSignIn(username,password)
@@ -99,9 +110,16 @@ chrome.runtime.onConnect.addListener((port)=>{
         }
         if(message.signOut){
             clearCopart()
-            chrome.storage.local.set({ copartProfile: {} })
-            chrome.storage.local.remove('copart_member_number')
+            // chrome.storage.local.set({ copartProfile: {} })
+            chrome.storage.local.clear()
             // chrome.storage.local.set({ selected_copart_account })
+            // console.log(message);
+        }
+        if(message.intercepted){
+            let intercepted=message.intercepted
+            const {data,url}=intercepted
+            console.log(data,url);
+            handleBids(data,url.includes('lotsWon'))
             // console.log(message);
         }
     })
@@ -190,31 +208,46 @@ let exampleBids=[
 ]
 
 let exampleBid1
-const handleBids=(bids)=>{
+
+
+const handleBids=(dts,won)=>{
     return new Promise((resolve, reject) => {
         chrome.storage.local.get('copart_member_number').then(async result=>{
             if(result.copart_member_number){
                 let member_number=result.copart_member_number
-                console.log('Sending',member_number,bids);
-                let bidsArr=[]
-                // exampleBids
-                exampleBids.forEach(async item=>{
-                    //I need -->timestamp, /lot, VIN, /bid_amount, /current_status,username,bidder
-                    const {bidStatusStr,currentBid,lotNumber,lotId,vehicleIdentificationNumber}=item
-                    const bidObj={
-                        lot:lotId,
-                        VIN:vehicleIdentificationNumber,
-                        bid_amount:currentBid,
-                        current_status:bidStatusStr
-                    }
-                    bidsArr.push(bidObj)
-                 })
-                 let response = await apiFetch(`bids/add/${member_number}`,'POST',{bids:bidsArr})
-                // let res=await response.json()
-                // console.log(res);
+                let bids=dts.aaData
                 
+                let bidsArr=[]
+
+                // exampleBids
+                bids.forEach(async item=>{
+                    let bidObj
+                    if(won){
+                        const {totalAmt,lotNumber,vin}=item 
+                        bidObj={
+                            lot:lotNumber,
+                            VIN:vin,
+                            bid_amount:parseFloat(totalAmt),
+                            current_status:'WON'
+                        } 
+                    }else{
+                        const {memberBidStatus,myBid,lotId,vehicleIdentificationNumber}=item
+                        bidObj={
+                            lot:lotId,
+                            VIN:vehicleIdentificationNumber,
+                            bid_amount:myBid,
+                            current_status:memberBidStatus
+                        }
+                    }
+                    bidsArr.push(bidObj) 
+                //I need -->timestamp, /lot, VIN, /bid_amount, /current_status,username,bidder
+                
+                })
+                console.log(bidsArr);
+                let response = await apiFetch(`bids/add/${member_number}`,'POST',{bids:bidsArr})
+                console.log(response);
             }
-        })
+    })
         
     })
 }
@@ -236,8 +269,11 @@ const duplicateRequest=(requestDetails)=>{
                 let resBody=await res.json()
                 // console.log(url,resBody);
                 // console.log(url);
+                
                 if(url.includes('/data/lots/') || url.includes('/lotsWon')){
+                    console.log(resBody,url);
                     // console.log(url,resBody,requestDetails);
+                    return
                     if(resBody.aaData){
                         let bidsArr=[...resBody.aaData]
                         handleBids(bidsArr)
@@ -261,39 +297,39 @@ const duplicateRequest=(requestDetails)=>{
 }
 
 
-chrome.webRequest.onBeforeSendHeaders.addListener((dets)=>{
+chrome.webRequest.onCompleted.addListener((dets)=>{
 
     const {url}=dets
-    
-    // if(dets.method='POST' && dets.requestHeaders){
-    //     dets.requestHeaders.forEach(item=>{
-    //         if(item.name=='X-XSRF-TOKEN'){
-    //             makeCurrentHeaders(dets.requestHeaders)
-    //             return
-    //             console.log(dets);
-    //             console.log(item);
-    //         }
-    //     })
-    // } 
+     
     if(dets.initiator){
         if(!(dets.initiator.includes('chrome-extension'))){
 
+            // let viableUrl=url.includes('/data/lots/') || url.includes('bidStatus/lotsWon') ||
+            // url.includes('public/data/contactinfo') || url.includes('data/member/account/alerts') ||
+            // url.includes('public/data/userConfig')
+            let viableUrl=url.includes('/data/lots/myBids') || url.includes('bidStatus/lotsWon')
 
-            if(url.includes('/data/lots/') || 
-            url.includes('bidStatus/lotsWon') ||
-            url.includes('public/data/contactinfo') ||
-            url.includes('data/member/account/alerts') ||
-            url.includes('public/data/userConfig')){
-                duplicateRequest(dets)
+            if(viableUrl){
+                chrome.storage.local.get(['copart_member_number'],res=>{
+                    if(res.copart_member_number){
+                        console.log(url);
+                        // duplicateRequest(dets)
+                        tab_port.postMessage('Hi')
+
+                    }
+                })
+                
             }
         }
         
     }
     
     
-},{urls:["https://*.copart.com/*","https://copart.com/*"]},["requestHeaders","extraHeaders"])
+},{urls:["https://*.copart.com/*","https://copart.com/*"]},["responseHeaders","extraHeaders"])
 
 let times
+
+// ["requestHeaders","extraHeaders"]
 
 // https://www.copart.com/data/lots/watchList
 

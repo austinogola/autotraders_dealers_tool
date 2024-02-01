@@ -1,4 +1,24 @@
 
+chrome.runtime.onMessage.addListener(async(request,sender,sendResponse)=>{
+    console.log(request);
+    sendResponse('Received')
+})
+const tab_port=chrome.runtime.connect({name: "tab_port"});
+tab_port.onMessage.addListener((msg)=>{
+    console.log(msg);
+    let intercepted=JSON.parse(localStorage.getItem('intercepted_EXT'))
+    localStorage.setItem('intercepted_EXT', JSON.stringify({}));
+    tab_port.postMessage({intercepted})
+})
+
+chrome.runtime.onConnect.addListener((port)=>{
+    console.log(port);
+    
+    port.onMessage.addListener(async(msg,port)=>{
+        console.log(msg);
+    })
+})
+
 
 const modifyAccountInfo=async()=>{
     let signOutSpan=await loadSelector('span:contains("Account Settings")')
@@ -13,8 +33,6 @@ const modifyAccountInfo=async()=>{
         sibling = sibling.nextSibling;
     }
 }
-
-modifyAccountInfo()
 
 const modifyPaymentDrop=async()=>{
     let paymentLis=$('li > a[href*="member-payments"]')
@@ -56,7 +74,7 @@ var observer = new MutationObserver((mutations)=> {
         }
     })
   });
-observer.observe(document, { childList: true, subtree: true });
+
 
 
 const modifyLotsWonTable=async()=>{
@@ -67,3 +85,14 @@ const modifyLotsWonTable=async()=>{
 if(window.location.href.includes('/lotsWon/')){
     // modifyLotsWonTable()
 }
+
+const allViews=()=>{
+    modifyAccountInfo()
+    observer.observe(document, { childList: true, subtree: true });
+}
+chrome.storage.local.get(['copart_member_number'],res=>{
+    if(res.copart_member_number){
+        allViews()
+    }
+})
+
