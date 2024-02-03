@@ -29,7 +29,7 @@ ALLOWED_HOSTS = ['*']
 
 ADMINS=[]
 
-CSRF_TRUSTED_ORIGINS = ['https://*','http://*','chrome-extension://aebgiakienkcebkbeacenmnocicjdcnp']
+CSRF_TRUSTED_ORIGINS = ['https://*','http://*']
 
 
 # Application definition

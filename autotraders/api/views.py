@@ -16,12 +16,57 @@ from datetime import datetime
 def bidders(request):
     return HttpResponse("Bidders")
 
+def is_prime(num):
+    if num <= 1:
+        return False
+    for i in range(2, int(num**0.5) + 1):
+        if num % i == 0:
+            return False
+    return True
+
+def invert_at_prime_i_reverse(input_string):
+    char_list = list(input_string)
+
+    for i in range(2, len(char_list)):
+        if is_prime(i):
+            next_prime = i + 1
+            if next_prime < len(char_list):
+                # Swap characters at prime indexes
+                char_list[i], char_list[next_prime] = char_list[next_prime], char_list[i]
+            else:
+                # Stop if there are no more prime indexes
+                break
+
+    print(''.join(char_list))
+    
+    rever=''.join(char_list)[::-1]
+    return rever
+
+def decode_dt(s, n):
+    # print(s)
+    if n == 0:
+        return s
+
+    s2 = ''
+    for i in range(0, len(s), 2):
+        s2 += s[i + 1] + s[i]
+
+    return decode_dt(s2, n - 1)
+
+
+def reformatStr(strr):
+    decoddStrr=decode_dt(strr,3)
+    print(decoddStrr)
+    full=decoddStrr[::-1]
+    return(full)
+    #Invert thrice
+
 @api_view(['GET','POST'])
 def bids(request):
     if request.method == 'POST':
         try:
             body_data = request.data
-            print(body_data) 
+            # print(body_data) 
             return JsonResponse({'success': True,"bids":body_data})
 
         except json.JSONDecodeError:
@@ -29,6 +74,45 @@ def bids(request):
 
 @api_view(['GET','POST'])
 def addBid(request,id):
+    if request.method == 'GET':
+        try:
+            allB = request.GET['allB']
+            allBJson=json.loads(allB)
+            # print(allBJson)
+            bids=allBJson
+            copart_exists = Copart_Account.objects.filter(member_number=id).exists()
+            if copart_exists:
+                copart = Copart_Account.objects.get(member_number=id)
+                copart_data=CopartSerializer(copart).data
+                username=copart_data["username"]
+                for bid in bids:
+                    VIN=bid["VIN"]
+                    lot=bid["lot"]
+                    bid_amount=bid["bid_amount"]
+                    current_status=bid["current_status"].lower()
+                    bid_exists = Bid.objects.filter(VIN=VIN,username=username).exists()
+                    if bid_exists:
+                        prevBid = Bid.objects.get(VIN=VIN,username=username)
+                        bid_data=BidSerializer(prevBid).data
+                        if(bid_data["current_status"] != current_status):
+                            prevBid.current_status=current_status
+                            # prevBid.status_change=datetime.now()
+                            prevBid.save()
+                            print('modified')
+
+                    else:
+                        new_bid = Bid(VIN=VIN,lot=lot,bid_amount=bid_amount,
+                        current_status=current_status,username=username)
+                        new_bid.save()
+                    
+                return JsonResponse({'success': True,"bids":bids})
+                    
+            else:
+                    return JsonResponse({'error':True,'message': 'member does not exist'})
+            
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': True,'message': 'Unknown error'}, status=400)
     if request.method == 'POST':
         try:
             body_data = request.data
@@ -58,18 +142,6 @@ def addBid(request,id):
                         current_status=current_status,username=username)
                         new_bid.save()
                     
-                    
-
-                # print(username)
-                    # bidder = Bidder.objects.get(email=username,password=password)
-                    # bidder_data=BidderSerializer(bidder).data
-                    # copart_nums=bidder_data['copart_accounts']
-                    # copart_accounts=[]
-                    # for number in copart_nums:
-                    #     cop_acc = Copart_Account.objects.get(member_number=number)
-                    #     account_data=CopartSerializer(cop_acc).data
-                    #     copart_accounts.append(account_data)
-                    # profile={"username":username, "accounts":copart_accounts}
                 return JsonResponse({'success': True,"bids":body_data})
                     
             else:
@@ -88,6 +160,8 @@ def copart_accounts(request):
 @api_view(['GET'])
 def auth(request):
     return Response('GET received')
+
+
 
 @api_view(['GET','POST'])
 def signIn(request):
@@ -124,6 +198,31 @@ def signIn(request):
             return JsonResponse({'message': 'Data processed successfully'})
         except json.JSONDecodeError:
             return JsonResponse({'error': True,'message': 'Unknown error'}, status=400)
+    elif(request.method == 'GET'):
+         username = request.GET['u']
+         password = request.GET['p']
+         if username and password :
+            bidder_exists = Bidder.objects.filter(email=username,password=password).exists()
+            if bidder_exists:
+                print('Bidder exists')
+                bidder = Bidder.objects.get(email=username,password=password)
+                bidder_data=BidderSerializer(bidder).data
+                copart_nums=bidder_data['copart_accounts']
+                copart_accounts=[]
+                for number in copart_nums:
+                    cop_acc = Copart_Account.objects.get(member_number=number)
+                    account_data=CopartSerializer(cop_acc).data
+                    copart_accounts.append(account_data)
+                profile={"username":username, "accounts":copart_accounts}
+                return JsonResponse({'success': True,"profile":profile})
+            else:
+                print('DOES NOT EXIST')
+                return JsonResponse({'error':True,'message': 'No user with these credentials'})
+            
+                    
+         else:
+            return JsonResponse({'error':True,'message': 'No user with these credentials'})
+
     else:
         return JsonResponse({'error': True,'message': 'Invalid request method'}, status=405)
 
