@@ -90,19 +90,26 @@ def addBid(request,id):
                     lot=bid["lot"]
                     bid_amount=bid["bid_amount"]
                     current_status=bid["current_status"].lower()
+                    timestamp=bid["timestamp"]
+                    timestamp=datetime.fromtimestamp(timestamp/1000)
+                    print(timestamp)
                     bid_exists = Bid.objects.filter(VIN=VIN,username=username).exists()
+
                     if bid_exists:
                         prevBid = Bid.objects.get(VIN=VIN,username=username)
                         bid_data=BidSerializer(prevBid).data
-                        if(bid_data["current_status"] != current_status):
+                        if (prevBid.bid_amount != bid_amount) or (prevBid.current_status!=current_status):
+                            prevBid.bid_amount = bid_amount
                             prevBid.current_status=current_status
-                            # prevBid.status_change=datetime.now()
+                            prevBid.status_change=timestamp
                             prevBid.save()
-                            print('modified')
+                            print('modified') 
+                            
+                           
 
                     else:
                         new_bid = Bid(VIN=VIN,lot=lot,bid_amount=bid_amount,
-                        current_status=current_status,username=username)
+                        current_status=current_status,username=username,timestamp=timestamp)
                         new_bid.save()
                     
                 return JsonResponse({'success': True,"bids":bids})

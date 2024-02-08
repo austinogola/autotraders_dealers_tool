@@ -11,6 +11,8 @@ const errorSpan=document.querySelector('#errorSpan')
 const exitBtn=document.querySelector("button#exitBtn")
 const openBtn=document.querySelector('#openBtn')
 
+const name1=document.querySelector('.welcome h3')
+
 let copartAccounts
 let selected_copart_account
 
@@ -20,6 +22,9 @@ const handle_copart_ui=()=>{
         if(result.copartProfile && Object.keys(result.copartProfile).includes('accounts')){
             signInForm.style.display='none'
             homePage.style.display='block'
+            if(result.copartProfile.username){
+                name1.innerText=result.copartProfile.username
+            }
             copartAccounts=[...result.copartProfile.accounts]
             copartAccounts.forEach(item=>{
                 if(item.active==true){

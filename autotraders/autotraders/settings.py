@@ -96,6 +96,16 @@ DATABASES = {
         'PORT': '5432'
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgres',
+#         'USER': 'db-master',
+#         'PASSWORD': 'Nairobi100',
+#         'HOST': 'autotraders-db.c1mey8qm63rb.eu-central-1.rds.amazonaws.com',
+#         'PORT': '5432'
+#     }
+# }
 
 
 # Password validation

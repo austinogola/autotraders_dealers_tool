@@ -71,6 +71,9 @@ form .formGroup{
     text-align: center;
     margin: 5px;
 }
+.welcome h3{
+    margin: 5px;
+}
 .accounts{
     text-align: center;
     margin: 5px;

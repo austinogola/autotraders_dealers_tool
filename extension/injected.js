@@ -12,13 +12,19 @@
 
     WIND.fetch=async function(callback){
         const originalthing=this
+
+        let relUrl=callback.includes('lots/prelim-bid') 
+            || callback.includes('/lotdetails')  || callback.includes('lots/bidDetails')
+            || callback.includes('/data/lots/myBids') || callback.includes('bidStatus/lotsWon')
         
 
-        if(callback.includes('data/lots/myBids') || callback.includes('data/bidStatus/lotsWon')){
-            console.log('US TOO',callback);
+        if(relUrl){
+            if(callback.includes('lots/prelim-bid') ){
+                
+            }
             let final = await originalFetch.call(originalthing, callback);
             const parsedResponse=await final.json()
-            console.log(parsedResponse);
+            // console.log(parsedResponse);
             return final
         }
         
@@ -36,6 +42,9 @@
     
     XHR.open = function(method, url) {
         // console.log(this);
+        if(url.includes('lots/prelim-bid')){
+           
+        }
         return open.apply(this, arguments);
     };
 
@@ -45,14 +54,25 @@
         this.addEventListener('load', async function() {
             
             const {responseURL,responseText}=this
+
+
+            // const relUrl=responseURL.includes('data/lots/myBids') || responseURL.includes('data/bidStatus/lotsWon')
+           
+            let relUrl=responseURL.includes('lots/prelim-bid') 
+            || responseURL.includes('/lotdetails')  || responseURL.includes('lots/bidDetails')
+            || responseURL.includes('/data/lots/myBids') || responseURL.includes('bidStatus/lotsWon')
             
 
-            if(responseURL.includes('data/lots/myBids') || responseURL.includes('data/bidStatus/lotsWon')){
-                console.log('WE ARE UP',responseURL);
+            if(relUrl){
                 let parsedResponse=JSON.parse(responseText)
-                let obj={url:responseURL,data:parsedResponse}
+                let obj={url:responseURL,data:parsedResponse,timestamp:new Date().getTime()}
+                if(responseURL.includes('lots/prelim-bid') ){
+                    obj.postData=postData
+
+                    localStorage.setItem('recent_BID', JSON.stringify(obj));
+                }
                 localStorage.setItem('intercepted_EXT', JSON.stringify(obj));
-                console.log(parsedResponse);
+
                
             }
             

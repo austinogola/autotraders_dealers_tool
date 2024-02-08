@@ -1,18 +1,39 @@
 
 chrome.runtime.onMessage.addListener(async(request,sender,sendResponse)=>{
-    console.log(request);
-    sendResponse('Received')
-})
-const tab_port=chrome.runtime.connect({name: "tab_port"});
-tab_port.onMessage.addListener((msg)=>{
-    console.log(msg);
-    let intercepted=JSON.parse(localStorage.getItem('intercepted_EXT'))
-    localStorage.setItem('intercepted_EXT', JSON.stringify({}));
-    tab_port.postMessage({intercepted})
+    
+    if(request=='getIntercepted'){
+        sendResponse('Connecting')
+        const tab_port=chrome.runtime.connect({name: "tab_port"});
+        let intercepted=JSON.parse(localStorage.getItem('intercepted_EXT'))
+        if(Object.keys(intercepted).length<1){
+            setTimeout(() => {
+                let intercepted=JSON.parse(localStorage.getItem('intercepted_EXT'))
+                tab_port.postMessage({intercepted})
+                
+            }, 10000);
+        }else{
+            tab_port.postMessage({intercepted})
+        }
+    }else if(request=='getMadeBid'){
+        sendResponse('Connecting')
+        const tab_port=chrome.runtime.connect({name: "tab_port"});
+        let intercepted=JSON.parse(localStorage.getItem('recent_BID'))
+        if(Object.keys(intercepted).length<1){
+            setTimeout(() => {
+                let intercepted=JSON.parse(localStorage.getItem('recent_BID'))
+                tab_port.postMessage({intercepted})
+                
+            }, 10000);
+        }else{
+            tab_port.postMessage({intercepted})
+        }
+    }
 })
 
+
+
+
 chrome.runtime.onConnect.addListener((port)=>{
-    console.log(port);
     
     port.onMessage.addListener(async(msg,port)=>{
         console.log(msg);

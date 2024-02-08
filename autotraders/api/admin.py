@@ -54,9 +54,9 @@ admin.site.register(Bidder, BidderAdmin)
 # admin.site.register(Bidder)
 
 class BidAdmin(admin.ModelAdmin):
-    list_display = ('timestamp','lot','VIN', 'bid_amount','current_status','username')  # Customize this based on your model fields
+    list_display = ('timestamp','lot','VIN', 'bid_amount','current_status','status_change','username')  # Customize this based on your model fields
 
-    search_fields = ['timestamp','lot','VIN', 'bid_amount','current_status','username'] 
+    search_fields = ['timestamp','lot','VIN', 'bid_amount','current_status','username','status_change'] 
 
     def status_change(self,obj):
         return obj.timestamp
