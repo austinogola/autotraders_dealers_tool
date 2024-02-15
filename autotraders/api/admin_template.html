@@ -1,0 +1,18 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script>
+        console.log('IT IS LOADED');
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log('IT IS LOADED');
+        const columnLink = document.querySelector('.field-bidder_link');
+        if (columnLink) {
+            columnLink.style.cursor = 'pointer';
+            columnLink.addEventListener("click", function() {
+                window.open('{{ bid.bidder_link }}', '_blank');
+            });
+        }
+    });
+    </script>
+{% endblock %}

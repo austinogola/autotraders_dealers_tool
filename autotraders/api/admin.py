@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Bid,Bidder,Copart_Account
 
 
@@ -54,12 +55,24 @@ admin.site.register(Bidder, BidderAdmin)
 # admin.site.register(Bidder)
 
 class BidAdmin(admin.ModelAdmin):
-    list_display = ('timestamp','lot','VIN', 'bid_amount','current_status','status_change','username')  # Customize this based on your model fields
 
     search_fields = ['timestamp','lot','VIN', 'bid_amount','current_status','username','status_change'] 
 
-    def status_change(self,obj):
-        return obj.timestamp
+    def lot_id(self, obj):
+        # Replace 'your_detail_url_name' with the name of the URL pattern for the detail view of the Bidder model
+        # Replace 'bidder_id' with the name of the parameter in your URL pattern that expects the Bidder's primary key
+        # This assumes you have a detail view for the Bidder model where you can pass the Bidder's primary key as an argument
+        url = f'https://www.copart.com/lot/{obj.lot}'
+        # return f'<a href="{url}">{obj.bidder}</a>'
+        return format_html(f'<a href="{url}" target="_blank">{obj.lot}</a>')
+    
+    # Allow HTML in the custom method's output
+    lot_id.allow_tags = True
+    lot_id.short_description = 'Lot'
+
+    list_display = ('timestamp','lot_id','VIN', 'bid_amount','current_status','status_change','username',)  # Customize this based on your model fields
+
+
     def save_model(self, request, obj, form, change):
         
 

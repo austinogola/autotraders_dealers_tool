@@ -72,6 +72,90 @@ def bids(request):
         except json.JSONDecodeError:
             return JsonResponse({'error': True,'message': 'Unknown error'}, status=400)
 
+@api_view(['GET'])
+def updateBid(request,id):
+    if request.method == 'GET':
+        theBid=request.GET['theBid']
+        theBidJson=json.loads(theBid)
+        lot=theBidJson["lot"]
+        VIN=theBidJson["VIN"]
+        bid_amount=theBidJson["bid_amount"]
+        current_status=theBidJson["current_status"].lower()
+        timestamp=theBidJson["timestamp"]
+        timestamp=datetime.fromtimestamp(timestamp/1000)
+
+        bidder_exists = Bidder.objects.filter(copart_accounts__contains=[id]).exists()
+        # bidder_exists = Bidder.objects.filter(email='austin_ogola').exists()
+        if bidder_exists:
+            theBidder = Bidder.objects.get(copart_accounts__contains=[id])
+            # theBidder = Bidder.objects.get(email='austin_ogola')
+            bidder_data=BidderSerializer(theBidder).data
+            username=bidder_data["email"]
+
+            prevBid = Bid.objects.get(lot=lot,username=username)
+            prevBid.bid_amount = bid_amount
+            prevBid.current_status=current_status
+            prevBid.status_change=timestamp
+            prevBid.save()
+            return JsonResponse({'success':True,'message': 'The bid has been updated'})
+
+        else:
+            return JsonResponse({'error':True,'message': 'member does not exist'})
+
+            
+       
+
+@api_view(['GET','POST'])
+def newBid(request,id):
+    if request.method == 'GET':
+        theBid=request.GET['theBid']
+        theBidJson=json.loads(theBid)
+       
+        bidder_exists = Bidder.objects.filter(copart_accounts__contains=[id]).exists()
+        # bidder_exists = Bidder.objects.filter(email='austin_ogola').exists()
+        if bidder_exists:
+            
+            VIN=theBidJson["VIN"]
+            lot=theBidJson["lot"]
+            bid_amount=theBidJson["bid_amount"]
+            current_status=theBidJson["current_status"].lower()
+            timestamp=theBidJson["timestamp"]
+            timestamp=datetime.fromtimestamp(timestamp/1000)
+
+            theBidder = Bidder.objects.get(copart_accounts__contains=[id])
+            # theBidder = Bidder.objects.get(email='austin_ogola')
+            bidder_data=BidderSerializer(theBidder).data
+            username=bidder_data["email"]
+
+            bid_exists = Bid.objects.filter(VIN=VIN,username=username).exists()
+            if bid_exists:
+
+                prevBid = Bid.objects.get(VIN=VIN,username=username)
+                bid_changed=(prevBid.bid_amount != bid_amount) or (prevBid.current_status!=current_status)
+                if (bid_changed):
+                    bid_data=BidSerializer(prevBid).data
+                    prevBid.bid_amount = bid_amount
+                    prevBid.current_status=current_status
+                    prevBid.status_change=timestamp
+                    prevBid.save()
+            else:
+                new_bid = Bid(VIN=VIN,lot=lot,bid_amount=bid_amount,current_status=current_status,
+                username=username,timestamp=timestamp)
+                new_bid.save()
+          
+            allBids=Bid.objects.filter(username=username)
+            bidsArr=[]
+            for e in allBids:
+                bidData=BidSerializer(e).data
+                bidsArr.append(bidData["lot"])
+
+            return JsonResponse({'success':True,'message': 'Bid added',"currentBids":bidsArr})
+            
+        else:
+            return JsonResponse({'error':True,'message': 'member does not exist'})
+
+
+
 @api_view(['GET','POST'])
 def addBid(request,id):
     if request.method == 'GET':
@@ -92,7 +176,6 @@ def addBid(request,id):
                     current_status=bid["current_status"].lower()
                     timestamp=bid["timestamp"]
                     timestamp=datetime.fromtimestamp(timestamp/1000)
-                    print(timestamp)
                     bid_exists = Bid.objects.filter(VIN=VIN,username=username).exists()
 
                     if bid_exists:

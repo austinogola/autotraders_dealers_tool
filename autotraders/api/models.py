@@ -47,11 +47,11 @@ class Bid(models.Model):
 
     username = models.CharField(max_length=255)  # Email of the bid owner
     bidder = models.ForeignKey(Bidder, on_delete=models.CASCADE, related_name='bids',blank=True, null=True)
-    status_change = models.DateTimeField(auto_now_add=True,blank=True, null=True)
+    status_change = models.DateTimeField(auto_now_add=False,blank=True, null=True)
 
 
     def __str__(self):
-        return str(self.VIN)
+        return str(self.lot)
 
 
 class Copart_Account(models.Model):
