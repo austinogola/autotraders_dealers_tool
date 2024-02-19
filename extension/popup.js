@@ -13,19 +13,25 @@ const openBtn=document.querySelector('#openBtn')
 
 const name1=document.querySelector('.welcome h3')
 
+const stimulateBtn=document.querySelector('.parent>button')
+
+// stimulateBtn.addEventListener('click',e=>{
+//     chrome.runtime.sendMessage('stimulate buy')
+// })
+
 let copartAccounts
 let selected_copart_account
 
 const handle_copart_ui=()=>{
-    chrome.storage.local.get(["copartProfile",'selected_copart_account',
+    chrome.storage.local.get(["bidderProfile",'selected_copart_account',
     'copart_member_number','usernameInput','passwordInput']).then((result) => {
-        if(result.copartProfile && Object.keys(result.copartProfile).includes('accounts')){
+        if(result.bidderProfile && Object.keys(result.bidderProfile).includes('accounts')){
             signInForm.style.display='none'
             homePage.style.display='block'
-            if(result.copartProfile.username){
-                name1.innerText=result.copartProfile.username
+            if(result.bidderProfile.username){
+                name1.innerText=result.bidderProfile.username
             }
-            copartAccounts=[...result.copartProfile.accounts]
+            copartAccounts=[...result.bidderProfile.accounts]
             copartAccounts.forEach(item=>{
                 if(item.active==true){
                     let opt = document.createElement('option');
@@ -56,8 +62,9 @@ handle_copart_ui()
 
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
-    if(changes.copartProfile){
-        let cop=changes.copartProfile.newValue
+    console.log(changes);
+    if(changes.bidderProfile){
+        let cop=changes.bidderProfile.newValue
         if(cop && Object.keys(cop).includes('accounts')){;
             handle_copart_ui()
         }else{
@@ -65,6 +72,14 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
             homePage.style.display='none'
         }
         
+    }
+    if(changes.bidderMessage){
+        let message=changes.bidderMessage.newValue
+        console.log(message);
+        signInForm.style.display='block'
+        homePage.style.display='none'
+        errorSpan.textContent=message
+        errorSpan.style.display='block'
     }
   });
 

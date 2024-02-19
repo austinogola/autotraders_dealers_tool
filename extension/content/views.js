@@ -23,12 +23,83 @@ chrome.runtime.onMessage.addListener(async(request,sender,sendResponse)=>{
                 let intercepted=JSON.parse(localStorage.getItem('recent_BID'))
                 tab_port.postMessage({intercepted})
                 
-            }, 10000);
+            }, 5000);
         }else{
             tab_port.postMessage({intercepted})
         }
+    }else if(request.saveLot){
+        sendResponse('Connecting')
+        const lotId=request.saveLot
+        const tab_port=chrome.runtime.connect({name: "tab_port"});
+        let allSavedLots=JSON.parse(localStorage.getItem('all_saved_lots'))
+
+        let newAllSaveLots=removeDuplicateUrls(allSavedLots)
+
+        newAllSaveLots.length>15?newAllSaveLots.shift():null
+
+        
+        localStorage.setItem('all_saved_lots', JSON.stringify(newAllSaveLots));
+        console.log(newAllSaveLots);
+
+
+
+        let  lotsToSave=newAllSaveLots.filter(item=>item.url.includes(lotId))
+
+        if(lotsToSave[0]){
+            chrome.storage.local.get(['savedLots'],res=>{
+                let savedLots=[]
+                if(res.savedLots){
+                    savedLots=[...res.savedLots,...lotsToSave]
+                }else{
+                    savedLots=[...lotsToSave]
+                }
+                savedLots=removeDuplicateUrls(savedLots)
+                chrome.storage.local.set({ savedLots: savedLots })
+    
+                console.log(savedLots);
+            })
+            
+        }
+        
+      
+        
+
+        // let current_saved_lots=localStorage.getItem('current_saved_lots')?
+        // JSON.parse(localStorage.getItem('current_saved_lots')):[]
+        // current_saved_lots.push(newLot)
+        // // console.log(current_saved_lots);
+        // current_saved_lots.length>15?current_saved_lots.shift():null
+        // // console.log(current_saved_lots);
+        // localStorage.setItem('current_saved_lots', JSON.stringify(current_saved_lots));
+        // tab_port.postMessage({intercepted:newLot})
+
+
     }
 })
+
+
+const removeDuplicateUrls=(arr)=>{
+    const uniqueUrls = {};
+
+    arr.forEach(obj => {
+        if(obj && obj.url){
+            if (uniqueUrls.hasOwnProperty(obj.url)) {
+                if (obj.timestamp > uniqueUrls[obj.url].timestamp) {
+                    uniqueUrls[obj.url] = obj;
+                }
+            } else {
+                
+                uniqueUrls[obj.url] = obj;
+            }
+        }
+        
+    });
+   
+    const filteredArray = Object.values(uniqueUrls);
+
+    return filteredArray;
+
+}
 
 
 

@@ -42,7 +42,7 @@ form .formGroup{
 
 }
 
-.formGroup button{
+.formGroup button,.parent >button{
     width: 254px;
     margin-bottom: 10px;
     margin-top: 10px;
@@ -54,6 +54,10 @@ form .formGroup{
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
+}
+.parent >button{
+    width: 100px;
+    
 }
 
 #errorSpan{
