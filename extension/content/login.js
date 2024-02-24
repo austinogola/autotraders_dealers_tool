@@ -1,5 +1,5 @@
 
-const  loadSelector=async(selector,query,all)=> {
+const  loadSelector=async(selector,all)=> {
     var raf;
     var found = false;
     let el
@@ -7,15 +7,11 @@ const  loadSelector=async(selector,query,all)=> {
 
     return new Promise((resolve,reject)=>{
         (function check(){
-            if(query){
-                el=$(selector)[0]
-
-            }else{
+           
                 
                 el=$(selector)[0]
                 elAll=$(selector)
-            }
-            
+                
             if (el) {
                 found = true;
                 cancelAnimationFrame(raf);

@@ -3,7 +3,7 @@ chrome.runtime.onMessage.addListener(async(request,sender,sendResponse)=>{
     
     if(request=='getIntercepted'){
         sendResponse('Connecting')
-        const tab_port=chrome.runtime.connect({name: "tab_port"});
+        
         let intercepted=JSON.parse(localStorage.getItem('intercepted_EXT'))
         if(Object.keys(intercepted).length<1){
             setTimeout(() => {
@@ -15,9 +15,7 @@ chrome.runtime.onMessage.addListener(async(request,sender,sendResponse)=>{
             tab_port.postMessage({intercepted})
         }
     }else if(request=='getMadeBid'){
-        sendResponse('Connecting')
-        const tab_port=chrome.runtime.connect({name: "tab_port"});
-        let intercepted=JSON.parse(localStorage.getItem('recent_BID'))
+        
         if(Object.keys(intercepted).length<1){
             setTimeout(() => {
                 let intercepted=JSON.parse(localStorage.getItem('recent_BID'))
@@ -25,7 +23,7 @@ chrome.runtime.onMessage.addListener(async(request,sender,sendResponse)=>{
                 
             }, 5000);
         }else{
-            tab_port.postMessage({intercepted})
+            
         }
     }else if(request.saveLot){
         sendResponse('Connecting')
@@ -101,6 +99,8 @@ const removeDuplicateUrls=(arr)=>{
 
 }
 
+let USERNAME
+
 
 
 
@@ -113,6 +113,16 @@ chrome.runtime.onConnect.addListener((port)=>{
 
 
 const modifyAccountInfo=async()=>{
+
+    chrome.storage.local.get(["bidderProfile"],async res=>{
+        if(res.bidderProfile){
+            USERNAME=res.bidderProfile.username
+
+            let usernameSpan=await loadSelector('span.loggedInUserIcon')
+            usernameSpan.innerText=USERNAME
+        }
+    })
+
     let signOutSpan=await loadSelector('span:contains("Account Settings")')
     let parentElement=signOutSpan.parentNode
 
@@ -124,6 +134,9 @@ const modifyAccountInfo=async()=>{
         }
         sibling = sibling.nextSibling;
     }
+
+    // .
+    
 }
 
 const modifyPaymentDrop=async()=>{
@@ -169,19 +182,127 @@ var observer = new MutationObserver((mutations)=> {
 
 
 
-const modifyLotsWonTable=async()=>{
-    let deliveryColumn=await loadSelector('th')
-    console.log(deliveryColumn);
-    // deliveryColumn.style.display='none'
+
+const paymentHistoryViews=()=>{
+    removeTransaction()
+    modifyTable('Title Status')
 }
-if(window.location.href.includes('/lotsWon/')){
-    // modifyLotsWonTable()
+
+const removeTransaction=async()=>{
+    const transView=await loadSelector('label:contains("Transaction View")')
+   
+    $('label:contains("Transaction View")').empty()
+    transView.style.display='none'
+}
+
+const paymentDueViews=()=>{
+    removeSummary()
+    modifyTable('Title Status')
+}
+
+const addToTable=async(newTitle)=>{
+    let table=await loadSelector('table')
+
+    let headRow=await loadSelector('thead tr')
+   
+
+    let newTh=document.createElement('th')
+    newTh.innerHTML=' Winner '
+    headRow.appendChild(newTh)
+
+    var tableRows=await loadSelector('tbody tr',true);
+    
+    tableRows.each(function(index) {
+        let element=$(this)[0]
+        let newTd=document.createElement('th')
+        newTd.innerHTML='-'
+        element.appendChild(newTd)
+        
+    });
+
+
+    // $('thead tr')[0].append('<th>Winner</th>');
+    
+
+   
+    
+}
+const modifyTable=async(titleString)=>{
+    let table=await loadSelector('table')
+    
+    let statIndex
+    var headerRows = await loadSelector('th',true);
+    headerRows.each(function(index) {
+        let text=$(this).text().trim()
+       
+        if(text==titleString){
+            // console.log($(this)); 
+            statIndex=index
+            $(this).text(' Winner ')
+            // $(this).css('display', 'none');
+        }else{
+            if(statIndex){
+                $(this).css('display', 'none');
+            }
+        }
+        
+        
+    });
+
+    var tableRows=await loadSelector('tbody tr',true);
+
+    tableRows.each(function(index) {
+        $(this).find('td').each(function(spanIndex) {
+            if(spanIndex==statIndex){
+                console.log($(this));
+                $(this).text(`${USERNAME}`);
+                $(this).css('white-space', 'initial');
+
+            }else if(spanIndex-1==statIndex){
+                $(this).css('display', 'none');
+            }
+            
+        });
+        
+    });
+    return
+    var headers = headerRow.getElementsByTagName('th');
+    console.log(headers);
+
+    let columnIndex
+
+    for (var i = 0; i < headers.length; i++) {
+        if (headers[i].innerHTML === "Title Status") {
+           columnIndex = i;
+           console.log(headers[i]);
+           break;
+           }
+       }
+
+}
+const removeSummary=async()=>{
+    let summary_div=await loadSelector('div.payment-summary')
+    summary_div.style.display='none'
 }
 
 const allViews=()=>{
     modifyAccountInfo()
     observer.observe(document, { childList: true, subtree: true });
+    let location=window.location.href
+    if(location.includes('copart.com/lotsWon/')){
+        modifyTable("Delivery")
+    }
+    if(location.includes('copart.com/lotsLost/')){
+        addToTable("Winner")
+    }
+    if(location.includes('member-payments/unpaid-invoices')){
+        paymentDueViews()
+    }
+    if(location.includes('member-payments/payment-history')){
+        paymentHistoryViews()
+    }
 }
+
 chrome.storage.local.get(['copart_member_number'],res=>{
     if(res.copart_member_number){
         allViews()

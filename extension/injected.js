@@ -49,19 +49,15 @@
     };
 
     XHR.send = function(postData) {
-        // console.log(this);
         
         this.addEventListener('load', async function() {
             
             const {responseURL,responseText}=this
+            let url=responseURL
 
-
-            // const relUrl=responseURL.includes('data/lots/myBids') || responseURL.includes('data/bidStatus/lotsWon')
-           
-            let relUrl=responseURL.includes('lots/prelim-bid') || responseURL.includes('lots/live-bid') 
-            || (responseURL.includes('/lotdetails') && !responseURL.includes('/lotImages') )
-            //  || responseURL.includes('lots/bidDetails')
-            // || responseURL.includes('/data/lots/myBids') || responseURL.includes('bidStatus/lotsWon')
+            let relUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid') 
+            || url.includes('bidStatus/lotsWon') || url.includes('data/lots/myBids')
+            || responseURL.includes('lots/bidDetails')
             
 
             if(relUrl){
@@ -70,21 +66,22 @@
                 try {
                     parsedResponse=JSON.parse(responseText)
                     obj={url:responseURL,data:parsedResponse,timestamp:new Date().getTime()}
+
+                    if(responseURL.includes('lots/prelim-bid') || responseURL.includes('lots/live-bid') ){
+                        obj.postData=postData
+                        localStorage.setItem('recent_BID', JSON.stringify(obj));
+                    }else if(responseURL.includes('/bidStatus/lotsWon') ){
+                        localStorage.setItem('lots_WON', JSON.stringify(obj));
+                    }else{
+                        localStorage.setItem('intercepted_EXT', JSON.stringify([]));
+                    }
                     
                 } catch (error) {
                     console.log('error');
                     
                 }
                 
-                if(responseURL.includes('lots/prelim-bid') || responseURL.includes('lots/live-bid') ){
-                    obj.postData=postData
-                    localStorage.setItem('recent_BID', JSON.stringify(obj));
-                }else if(responseURL.includes('/lotdetails') && !responseURL.includes('/lotImages') ){
-                   
-                    localStorage.setItem('all_saved_lots', JSON.stringify([]));
-                }else{
-                    localStorage.setItem('intercepted_EXT', JSON.stringify([]));
-                }
+                
                 
 
                

@@ -1,6 +1,6 @@
 importScripts(
     "handlers/bidHandler.js",
-    "handlers/apiHandler.js",
+    "handlers/apiHandler.js","handlers/selfApi.js",
 )
 
 // const HOST=`http://127.0.0.1:8000/`
@@ -25,8 +25,8 @@ const  clearCopart=()=>{
 }
 
 chrome.runtime.onInstalled.addListener(async(dets)=>{
-    clearCopart()
-    chrome.storage.local.clear()
+    // clearCopart()
+    // chrome.storage.local.clear()
 })
 
 let MEMBER_NUMBER
@@ -159,45 +159,33 @@ const makeCurrentHeaders=(requestDetails)=>{
    
 }
 
-const sendMessageToTab =(tabId, message, maxRetries = 20, retryInterval = 500) =>{
-    
-    return new Promise((resolve, reject) => {
-        let retries = 0;
 
-        const sendMessageAttempt = () => {
-            if (retries >= maxRetries) {
-              console.log(`Maximum retries (${maxRetries}) reached. Message not sent.`);
-              resolve('NOT SENT')
-              return;
-            }
-        
-            chrome.tabs.sendMessage(tabId, message, response => {
-              if (chrome.runtime.lastError) {
-                // console.error(chrome.runtime.lastError.message);
-                retries++;
-                setTimeout(sendMessageAttempt, retryInterval);
-              }
-              else{
-                  resolve('MESSAGE SENT')
-                  return
-              }
-            });
-        };
 
-        sendMessageAttempt();
+
+
+const duplicateRequest=(dets)=>{
+    let {url,requestHeaders,method,initiator}=dets
+    // return
+    let headers={}
+    requestHeaders.forEach(val=>{
+        headers[val.name]=val.value
     })
-    
-  }
+    fetch(url,{
+        method
+    })
 
-
-
-
+}
 
 chrome.webRequest.onBeforeSendHeaders.addListener((dets)=>{
+    const {url}=dets
     if(dets.initiator){
         if(!(dets.initiator.includes('chrome-extension'))){
             makeCurrentHeaders(dets)
+            if(url.includes('lotsWon')){
+                // duplicateRequest(dets)
+            }
         }
+        
     }
 
 },{urls:["https://*.copart.com/*","https://copart.com/*"]},["requestHeaders","extraHeaders"])
@@ -210,19 +198,21 @@ chrome.webRequest.onCompleted.addListener((dets)=>{
      
     if(dets.initiator){
         if(!(dets.initiator.includes('chrome-extension'))){
+            
 
             let viableUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid') 
-            || (url.includes('userConfig') )
+            || (url.includes('userConfig') || url.includes("lot"))
           
 
             if(viableUrl){
                 if(url.includes('lots/prelim-bid')|| url.includes('lots/live-bid') ){
-                    sendMessageToTab(dets.tabId,'getMadeBid')
+                    sendMessageToTab(dets.tabId,{sc:'getMadeBid'})
                 }
                 else if(url.includes('userConfig') ){
-                    checkCurrentBids(new Date().getTime())
-                
-                    
+                    checkCurrentBids(new Date().getTime()) 
+                }
+                else if(url.includes('lot') ){
+                    console.log(url);
                 }
                 // console.log('Viable');
                 // chrome.storage.local.get(['copart_member_number'],res=>{

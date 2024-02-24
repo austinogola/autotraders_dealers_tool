@@ -24,7 +24,7 @@
     },
     "content_scripts":[{
       "matches":["https://*.copart.com/*","https://copart.com/*"],
-      "js":["content/jquery.js","content/login.js","content/views.js","inject.js"],
+      "js":["content/jquery.js","content/login.js","content/views.js","content/scraper.js","inject.js"],
       "run_at": "document_start",
       "all_frames": true
       }]
