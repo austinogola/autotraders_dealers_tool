@@ -11,25 +11,31 @@
     var originalFetch = window.fetch
 
     WIND.fetch=async function(callback){
+        
         const originalthing=this
 
-        let relUrl=callback.includes('lots/prelim-bid') 
-            || callback.includes('/lotdetails')  || callback.includes('lots/bidDetails')
-            || callback.includes('/data/lots/myBids') || callback.includes('bidStatus/lotsWon')
-        
-
+        // let relUrl=callback.includes('lots/prelim-bid') 
+        //     || callback.includes('/lotdetails')  || callback.includes('lots/bidDetails')
+        //     || callback.includes('/data/lots/myBids') || callback.includes('bidStatus/lotsWon')
+        // callback.includes('lots/prelim-bid')
+        let relUrl=callback.includes('lots/prelim-bid') || callback.includes('lots/live-bid')
         if(relUrl){
+            console.log(callback,arguments,this);
+            // return originalFetch.apply(this, arguments);
+        }
+
+        if(false){
             if(callback.includes('lots/prelim-bid') ){
                 
             }
-            let final = await originalFetch.call(originalthing, callback);
+            let final = await originalFetch.apply(this, arguments);
             const parsedResponse=await final.json()
             // console.log(parsedResponse);
             return final
         }
         
         try {
-            return originalFetch.call(originalthing, callback);
+            return originalFetch.apply(this, arguments);
             
         } catch (error) {
             console.log(error);
@@ -41,9 +47,11 @@
     }
     
     XHR.open = function(method, url) {
-        // console.log(this);
-        if(url.includes('lots/prelim-bid')){
-           
+
+        let relUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid')
+        if(relUrl){
+            console.log(method, url);
+            // return originalFetch.apply(this, arguments);
         }
         return open.apply(this, arguments);
     };
@@ -52,20 +60,28 @@
         
         this.addEventListener('load', async function() {
             
+            
             const {responseURL,responseText}=this
             let url=responseURL
 
-            let relUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid') 
-            || url.includes('bidStatus/lotsWon') || url.includes('data/lots/myBids')
-            || responseURL.includes('lots/bidDetails')
+            // let relUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid') 
+            // || url.includes('bidStatus/lotsWon') || url.includes('data/lots/myBids')
+            // || responseURL.includes('lots/bidDetails')
+
+            let relUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid')
+            if(relUrl){
+                let parsedResponse=JSON.parse(responseText)
+                let obj={url:responseURL,data:parsedResponse,timestamp:new Date().getTime(),postData}
+                localStorage.setItem('recent_BID', JSON.stringify(obj));
+                console.log(this,postData);
+            }
             
 
-            if(relUrl){
+            if(false){
                 let parsedResponse
                 let obj
                 try {
-                    parsedResponse=JSON.parse(responseText)
-                    obj={url:responseURL,data:parsedResponse,timestamp:new Date().getTime()}
+                    
 
                     if(responseURL.includes('lots/prelim-bid') || responseURL.includes('lots/live-bid') ){
                         obj.postData=postData

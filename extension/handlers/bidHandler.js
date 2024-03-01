@@ -20,9 +20,9 @@ const checkCurrentBids=(timestamp)=>{
             let myBids=await getMyBids(res.member_number)
 
             res.currentBids.forEach(lotId=>{
-               let theBid=myBids.filter(item=>item.lotId==lotId)[0]
+               let theBid=myBids.filter(item=>item.lotId==lotId)
 
-               if(theBid){
+               if(theBid && theBid[0]){
                     const {memberBidStatus,myBid,vehicleIdentificationNumber}=theBid
                     const bidInf={current_status:memberBidStatus,
                         bid_amount:myBid,VIN:vehicleIdentificationNumber,lot:lotId,
@@ -70,12 +70,14 @@ const updateBid=(bidInfo)=>{
 }
 
 const sendBidToServer=(bidInfo)=>{
+    console.log(bidInfo);
     
     return new Promise(async(resolve, reject) => {
 
         chrome.storage.local.get(['member_number'],async res=>{
             // console.log(res);
             if(res.member_number){
+                console.log(res);
                 member_number=res.member_number
                 let theBid=JSON.stringify(bidInfo)
                 let params=`?theBid=${theBid}`
@@ -95,6 +97,29 @@ const sendBidToServer=(bidInfo)=>{
 }
 
 const handleNewBid=(bidData)=>{
+    const {data,postData,timestamp}=bidData
+
+    //Check if successfull
+    let lotResult=data.data.result.lots
+    if(Object.keys(lotResult).length==0){
+        console.log("successfull",postData);
+        let bidInfos=JSON.parse(postData)
+        bidInfos.forEach(async lotObj=>{
+            const {lotId,bidAmount}=lotObj
+            let rawLotInfo=await getLotDetails(parseInt(lotId))
+            let bidObj={
+                current_status:'WINNING',
+                bid_amount:bidAmount,
+                VIN:rawLotInfo.fv,
+                lot:lotId
+            }
+            console.log(bidObj);
+            sendBidToServer(bidObj)
+        })
+    }
+}
+
+const handleNewBid2=(bidData)=>{
     const {data,url,postData,timestamp}=bidData
 
     return new Promise(async(resolve, reject) => {
@@ -102,6 +127,7 @@ const handleNewBid=(bidData)=>{
             if(result.copart_member_number){
                 let member_number=result.copart_member_number
                 let bidInfos=JSON.parse(postData)
+                console.log(bidInfos);
 
                 bidInfos.forEach(async bidInfo=>{
                     let {returnCodeDesc}=data
@@ -113,6 +139,7 @@ const handleNewBid=(bidData)=>{
                         for (let i = 0; i < 3; i++) {
                             let allMyBids=await getMyBids(859420)
                             theBid=allMyBids.filter(item=>item.lotId==lotId)[0]
+                            console.log(theBid);
 
                             if(theBid){
                                 bidPresent=true
@@ -151,7 +178,8 @@ const getLotDetails=(lotId)=>{
         let lotUrl=`https://www.copart.com/public/data/lotdetails/solr/${lotId}`
         fetch(lotUrl,{
             method:'GET',
-            headers:Copart_Headers
+            // headers:Copart_Headers
+            credentials: "include",
         }).then(async res=>{
             let resData=await res.json()
             resolve(resData.data.lotDetails);
@@ -161,6 +189,11 @@ const getLotDetails=(lotId)=>{
         
     })
 }
+
+// setTimeout(async() => {
+//     let lotd=await getLotDetails(74245073)
+//     console.log(lotd);
+// }, 15000);
 
 let lotDatas=[
     {"lotId":"39757774","bidAmount":"100","startingBid":"90","auctionId":7799055,"maxBid":"90",

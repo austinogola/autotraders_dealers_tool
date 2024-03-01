@@ -80,17 +80,16 @@ chrome.runtime.onConnect.addListener((port)=>{
         }
         if(message.intercepted){
             let intercepted=message.intercepted
-
-    
-            
             const {data,url,postData,timestamp}=intercepted
 
             if(url){
                 if(url.includes('lots/prelim-bid') || url.includes('lots/live-bid') ){
-                    console.log('Prebid made',intercepted);
+                    if(url.includes('lots/prelim-bid')){
+                        console.log('Prebid made',intercepted);
+                    }else{
+                        console.log('Live bid made',intercepted);
+                    }
                     handleNewBid(intercepted)
-                    return
-                    handleRecentBid(intercepted)
 
                 }
                 else if(url.includes('/lotdetails')){
@@ -98,9 +97,6 @@ chrome.runtime.onConnect.addListener((port)=>{
                     console.log(intercepted);
                     return
                     handleBids(data,url,timestamp)
-
-                }
-                else if(url.includes('lots/prelim-bid')){
 
                 }
             }
@@ -200,11 +196,19 @@ chrome.webRequest.onCompleted.addListener((dets)=>{
         if(!(dets.initiator.includes('chrome-extension'))){
             
 
-            let viableUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid') 
-            || (url.includes('userConfig') || url.includes("lot"))
+            // let viableUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid') 
+            // || (url.includes('userConfig') || url.includes("lot"))
           
 
-            if(viableUrl){
+            let bidUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid')
+            if(bidUrl){
+                sendMessageToTab(dets.tabId,{sc:'getMadeBid'})
+            }
+            if(url.includes('userConfig') ){
+                checkCurrentBids(new Date().getTime()) 
+            }
+
+            if(false){
                 if(url.includes('lots/prelim-bid')|| url.includes('lots/live-bid') ){
                     sendMessageToTab(dets.tabId,{sc:'getMadeBid'})
                 }
