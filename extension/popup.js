@@ -110,6 +110,8 @@ const signOutOfProfile=()=>{
 
 signInForm.addEventListener('submit',e=>{
     e.preventDefault()
+    console.log(usernameField);
+    console.log(passwordField);
     const username=usernameField.value
     const password=passwordField.value
     popup_port.postMessage({dealerSign:true,password,username})

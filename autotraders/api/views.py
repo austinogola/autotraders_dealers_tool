@@ -83,21 +83,27 @@ def updateBid(request,id):
         current_status=theBidJson["current_status"].lower()
         timestamp=theBidJson["timestamp"]
         timestamp=datetime.fromtimestamp(timestamp/1000)
+        username=request.GET['us']
+        password=request.GET['pwd']
 
-        bidder_exists = Bidder.objects.filter(copart_accounts__contains=[id]).exists()
-        # bidder_exists = Bidder.objects.filter(email='austin_ogola').exists()
+        # bidder_exists = Bidder.objects.filter(copart_accounts__contains=[id]).exists()
+        bidder_exists = Bidder.objects.filter(email=username,password=password).exists()
         if bidder_exists:
-            theBidder = Bidder.objects.get(copart_accounts__contains=[id])
-            # theBidder = Bidder.objects.get(email='austin_ogola')
+            # theBidder = Bidder.objects.get(copart_accounts__contains=[id])
+            theBidder = Bidder.objects.get(email=username,password=password)
             bidder_data=BidderSerializer(theBidder).data
-            username=bidder_data["email"]
 
-            prevBid = Bid.objects.get(lot=lot,username=username)
+            prevBid = Bid.objects.get(username=username,lot=lot,VIN=VIN)
             prevBid.bid_amount = bid_amount
             prevBid.current_status=current_status
             prevBid.status_change=timestamp
             prevBid.save()
-            return JsonResponse({'success':True,'message': 'The bid has been updated'})
+            allBids=Bid.objects.filter(username=username)
+            bidsArr=[]
+            for e in allBids:
+                bidData=BidSerializer(e).data
+                bidsArr.append(bidData)
+            return JsonResponse({'success':True,'message': 'The bid has been updated',"currentBids":bidsArr})
 
         else:
             return JsonResponse({'error':True,'message': 'member does not exist'})
@@ -109,10 +115,12 @@ def updateBid(request,id):
 def newBid(request,id):
     if request.method == 'GET':
         theBid=request.GET['theBid']
+        username=request.GET['us']
+        password=request.GET['pwd']
         theBidJson=json.loads(theBid)
        
-        bidder_exists = Bidder.objects.filter(copart_accounts__contains=[id]).exists()
-        # bidder_exists = Bidder.objects.filter(email='austin_ogola').exists()
+        # bidder_exists = Bidder.objects.filter(copart_accounts__contains=[id]).exists()
+        bidder_exists = Bidder.objects.filter(email=username,password=password).exists()
         if bidder_exists:
             
             VIN=theBidJson["VIN"]
@@ -122,14 +130,13 @@ def newBid(request,id):
             timestamp=theBidJson["timestamp"]
             timestamp=datetime.fromtimestamp(timestamp/1000)
 
-            theBidder = Bidder.objects.get(copart_accounts__contains=[id])
-            # theBidder = Bidder.objects.get(email='austin_ogola')
+            # theBidder = Bidder.objects.get(copart_accounts__contains=[id])
+            theBidder = Bidder.objects.get(email=username,password=password)
             bidder_data=BidderSerializer(theBidder).data
             username=bidder_data["email"]
 
             bid_exists = Bid.objects.filter(VIN=VIN,username=username).exists()
             if bid_exists:
-
                 prevBid = Bid.objects.get(VIN=VIN,username=username)
                 bid_changed=(prevBid.bid_amount != bid_amount) or (prevBid.current_status!=current_status)
                 if (bid_changed):
@@ -147,7 +154,7 @@ def newBid(request,id):
             bidsArr=[]
             for e in allBids:
                 bidData=BidSerializer(e).data
-                bidsArr.append(bidData["lot"])
+                bidsArr.append(bidData)
 
             return JsonResponse({'success':True,'message': 'Bid added',"currentBids":bidsArr})
             
@@ -269,12 +276,13 @@ def signIn(request):
                     bidder = Bidder.objects.get(email=username,password=password)
                     bidder_data=BidderSerializer(bidder).data
                     copart_nums=bidder_data['copart_accounts']
+                    max_bid=bidder_data['allowed_max_bid']
                     copart_accounts=[]
                     for number in copart_nums:
                         cop_acc = Copart_Account.objects.get(member_number=number)
                         account_data=CopartSerializer(cop_acc).data
                         copart_accounts.append(account_data)
-                    profile={"username":username, "accounts":copart_accounts}
+                    profile={"username":username, "accounts":copart_accounts,"max_bid":max_bid}
                     return JsonResponse({'success': True,"profile":profile})
                     
                 else:
@@ -298,12 +306,13 @@ def signIn(request):
                 bidder = Bidder.objects.get(email=username,password=password)
                 bidder_data=BidderSerializer(bidder).data
                 copart_nums=bidder_data['copart_accounts']
+                max_bid=bidder_data['allowed_max_bid']
                 copart_accounts=[]
                 for number in copart_nums:
                     cop_acc = Copart_Account.objects.get(member_number=number)
                     account_data=CopartSerializer(cop_acc).data
                     copart_accounts.append(account_data)
-                profile={"username":username, "accounts":copart_accounts}
+                profile={"username":username, "accounts":copart_accounts,"max_bid":max_bid}
                 return JsonResponse({'success': True,"profile":profile})
             else:
                 print('DOES NOT EXIST')

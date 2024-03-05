@@ -285,6 +285,22 @@ const removeSummary=async()=>{
     summary_div.style.display='none'
 }
 
+const preventMaxBids=async()=>{
+    chrome.storage.local.get(['MAX_BID'],async res=>{
+        if(res.MAX_BID){
+            let bidInput=await loadSelector('input[name="maxBid"]')
+            console.log(bidInput);
+            bidInput.addEventListener('input',e=>{
+                const val=parseFloat(e.target.value)
+                if(val>res.MAX_BID){
+                    e.target.value=res.MAX_BID
+                }
+            })
+        }
+    })
+    
+}
+
 const allViews=()=>{
     modifyAccountInfo()
     observer.observe(document, { childList: true, subtree: true });
@@ -301,10 +317,13 @@ const allViews=()=>{
     if(location.includes('member-payments/payment-history')){
         paymentHistoryViews()
     }
+    if(location.includes('https://www.copart.com/lot/')){
+        preventMaxBids()
+    }
 }
 
-chrome.storage.local.get(['copart_member_number'],res=>{
-    if(res.copart_member_number){
+chrome.storage.local.get(['MEMBER_NUMBER'],res=>{
+    if(res.MEMBER_NUMBER){
         allViews()
     }
 })

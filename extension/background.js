@@ -3,10 +3,10 @@ importScripts(
     "handlers/apiHandler.js","handlers/selfApi.js",
 )
 
-// const HOST=`http://127.0.0.1:8000/`
-const HOST=`http://3.78.251.248:3000/`
-// const DOMAIN=`127.0.0.1`
-const DOMAIN=`3.78.251.248`
+const HOST=`http://127.0.0.1:8000/`
+// const HOST=`http://3.78.251.248:3000/`
+const DOMAIN=`127.0.0.1`
+// const DOMAIN=`3.78.251.248`
 
 const  clearCopart=()=>{
 
@@ -29,7 +29,7 @@ chrome.runtime.onInstalled.addListener(async(dets)=>{
     // chrome.storage.local.clear()
 })
 
-let MEMBER_NUMBER
+let member_number
 
 
 chrome.runtime.onMessage.addListener(async(request, sender, sendResponse)=>{
@@ -51,7 +51,7 @@ chrome.runtime.onConnect.addListener((port)=>{
             
             let {username,password}=message
             let copartCreds=await dealerSignIn(username,password)
-            // console.log(copartCreds);
+            handleCopDetails(copartCreds,username,password)
             
             // port.postMessage({dealerStatus:copartCreds})
             // console.log(copartCreds);
@@ -84,11 +84,6 @@ chrome.runtime.onConnect.addListener((port)=>{
 
             if(url){
                 if(url.includes('lots/prelim-bid') || url.includes('lots/live-bid') ){
-                    if(url.includes('lots/prelim-bid')){
-                        console.log('Prebid made',intercepted);
-                    }else{
-                        console.log('Live bid made',intercepted);
-                    }
                     handleNewBid(intercepted)
 
                 }
@@ -109,8 +104,14 @@ chrome.runtime.onConnect.addListener((port)=>{
 
 
 
+const handleCopDetails=(copartCreds,us,pwd)=>{
+    const {profile,success}=copartCreds
+    const {max_bid}=profile
 
+    const MAX_BID=parseInt(max_bid)
+    chrome.storage.local.set({MAX_BID:max_bid,USERNAME:us,PWD:pwd})
 
+}
 
 const dealerSignIn=(username,password)=>{
     return new Promise(async(resolve, reject) => {

@@ -1,4 +1,4 @@
-(async function(xhr,win,chro) {
+(async function(xhr,win,st) {
     
 
     var XHR = XMLHttpRequest.prototype;
@@ -10,14 +10,13 @@
 
     var originalFetch = window.fetch
 
+    const MY_MAX_BID=st.getItem('MAX_BID')
+
     WIND.fetch=async function(callback){
         
         const originalthing=this
 
-        // let relUrl=callback.includes('lots/prelim-bid') 
-        //     || callback.includes('/lotdetails')  || callback.includes('lots/bidDetails')
-        //     || callback.includes('/data/lots/myBids') || callback.includes('bidStatus/lotsWon')
-        // callback.includes('lots/prelim-bid')
+      
         let relUrl=callback.includes('lots/prelim-bid') || callback.includes('lots/live-bid')
         if(relUrl){
             console.log(callback,arguments,this);
@@ -49,10 +48,6 @@
     XHR.open = function(method, url) {
 
         let relUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid')
-        if(relUrl){
-            console.log(method, url);
-            // return originalFetch.apply(this, arguments);
-        }
         return open.apply(this, arguments);
     };
 
@@ -63,45 +58,15 @@
             
             const {responseURL,responseText}=this
             let url=responseURL
-
-            // let relUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid') 
-            // || url.includes('bidStatus/lotsWon') || url.includes('data/lots/myBids')
-            // || responseURL.includes('lots/bidDetails')
-
             let relUrl=url.includes('lots/prelim-bid') || url.includes('lots/live-bid')
             if(relUrl){
                 let parsedResponse=JSON.parse(responseText)
                 let obj={url:responseURL,data:parsedResponse,timestamp:new Date().getTime(),postData}
                 localStorage.setItem('recent_BID', JSON.stringify(obj));
-                console.log(this,postData);
+                
             }
             
-
-            if(false){
-                let parsedResponse
-                let obj
-                try {
-                    
-
-                    if(responseURL.includes('lots/prelim-bid') || responseURL.includes('lots/live-bid') ){
-                        obj.postData=postData
-                        localStorage.setItem('recent_BID', JSON.stringify(obj));
-                    }else if(responseURL.includes('/bidStatus/lotsWon') ){
-                        localStorage.setItem('lots_WON', JSON.stringify(obj));
-                    }else{
-                        localStorage.setItem('intercepted_EXT', JSON.stringify([]));
-                    }
-                    
-                } catch (error) {
-                    console.log('error');
-                    
-                }
-                
-                
-                
-
-               
-            }
+            
             
            
         });
@@ -111,4 +76,4 @@
     return
   
 
-})(XMLHttpRequest,window,chrome)
+})(XMLHttpRequest,window,localStorage)

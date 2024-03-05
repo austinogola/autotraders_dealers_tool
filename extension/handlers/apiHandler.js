@@ -1,6 +1,7 @@
 const getCsrfToken=()=>{
     return new Promise(async(resolve, reject) => {
         chrome.cookies.getAll({name:'csrftoken',domain:DOMAIN},ck=>{
+            console.log(ck);
             resolve (ck[0].value)
         })
     })
@@ -8,7 +9,7 @@ const getCsrfToken=()=>{
 
 const apiFetch=(path,method,body)=>{
     return new Promise(async(resolve, reject) => {
-        let csrfToken=await getCsrfToken()
+        // let csrfToken=await getCsrfToken()
         setTimeout(() => {
             resolve({error:true,message:'Slow network connection'})
         }, 20000);
@@ -16,7 +17,7 @@ const apiFetch=(path,method,body)=>{
             method:method,
             headers:{
                 'Content-Type':'application/json',
-                'X-CSRFToken': csrfToken
+                // 'X-CSRFToken': csrfToken
             },
             body:body?JSON.stringify(body):null
         }).then(async response=>{

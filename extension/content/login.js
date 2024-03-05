@@ -35,7 +35,6 @@ const loginToCopart=async(userN,pwd,num)=>{
     username_input.setAttribute("autocomplete", "off");
     username_input.setAttribute("type", "password");
     password_input.setAttribute("autocomplete", "off");
-    console.log(loginBtn);
     chrome.storage.local.remove('selected_copart_account')
    
 
@@ -57,7 +56,7 @@ const loginToCopart=async(userN,pwd,num)=>{
         })
     );
 
-    chrome.storage.local.set({copart_member_number:num},res=>{
+    chrome.storage.local.set({MEMBER_NUMBER:num},res=>{
         loginBtn.click()
     })
     
