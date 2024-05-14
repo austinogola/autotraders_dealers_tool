@@ -1,6 +1,13 @@
 
 chrome.runtime.onMessage.addListener(async(request,sender,sendResponse)=>{
-    
+    if(request=='check views'){
+        sendResponse('checking views')
+        chrome.storage.local.get(['MEMBER_NUMBER'],res=>{
+            if(res.MEMBER_NUMBER){
+                allViews()
+            }
+        })
+    }
     if(request=='getIntercepted'){
         sendResponse('Connecting')
         

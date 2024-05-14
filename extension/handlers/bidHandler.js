@@ -19,9 +19,10 @@ const checkCurrentBids=(timestamp)=>{
             res.userCurrentBids.forEach(userBid=>{
                let theBid=myBids.filter(item=>item.lotId==userBid.lot)
                let {current_status,bid_amount,VIN,lot,username}=userBid
+               current_status=current_status.toLowerCase()
                if(theBid && theBid[0]){
                     
-                    current_status=current_status.toLowerCase()
+                    
                     let formerAmount=parseFloat(bid_amount)
 
                     let {memberBidStatus,myBid,myMaxBid,vehicleIdentificationNumber,currentBid}=theBid[0]
@@ -39,8 +40,12 @@ const checkCurrentBids=(timestamp)=>{
                     }
                     
                 }else{
-                    const bidInf={current_status:"lost",bid_amount,VIN,lot,username,timestamp}
-                    updateBid(bidInf)
+                    if(current_status!='outbid'){
+                        const bidInf={current_status:"outbid",bid_amount,VIN,lot,username,timestamp}
+                        updateBid(bidInf)
+                    }
+                    
+                    
                 }
             })
 
