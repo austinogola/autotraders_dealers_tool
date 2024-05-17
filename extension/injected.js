@@ -52,7 +52,7 @@
     };
 
     XHR.send = function(postData) {
-        console.log(postData);
+        console.log('postData',postData);
         this.addEventListener('load', async function() {
             
             const {responseURL,responseText}=this
