@@ -278,12 +278,17 @@ def signIn(request):
                     copart_nums=bidder_data['copart_accounts']
                     max_bid=bidder_data['allowed_max_bid']
                     copart_accounts=[]
+                    print(copart_nums)
                     for number in copart_nums:
-                        cop_acc = Copart_Account.objects.get(member_number=number)
-                        account_data=CopartSerializer(cop_acc).data
-                        copart_accounts.append(account_data)
+                        cop_acc_exists = Copart_Account.objects.filter(member_number=number).exists()
+                        if cop_acc_exists:
+                            cop_acc = Copart_Account.objects.get(member_number=number)
+                            account_data=CopartSerializer(cop_acc).data
+                            copart_accounts.append(account_data)
+                        # else:
+                        #    return JsonResponse({'error':True,'message': 'User has no Copart account'})
                     profile={"username":username, "accounts":copart_accounts,"max_bid":max_bid}
-                    return JsonResponse({'success': True,"profile":profile})
+                    return JsonResponse({'success': True,"profile":profile}) 
                     
                 else:
                     return JsonResponse({'error':True,'message': 'No user with these credentials'})
@@ -308,10 +313,13 @@ def signIn(request):
                 copart_nums=bidder_data['copart_accounts']
                 max_bid=bidder_data['allowed_max_bid']
                 copart_accounts=[]
+                print(copart_nums)
                 for number in copart_nums:
-                    cop_acc = Copart_Account.objects.get(member_number=number)
-                    account_data=CopartSerializer(cop_acc).data
-                    copart_accounts.append(account_data)
+                    cop_acc_exists = Copart_Account.objects.filter(member_number=number).exists()
+                    if cop_acc_exists:
+                        cop_acc = Copart_Account.objects.get(member_number=number)
+                        account_data=CopartSerializer(cop_acc).data
+                        copart_accounts.append(account_data)
                 profile={"username":username, "accounts":copart_accounts,"max_bid":max_bid}
                 return JsonResponse({'success': True,"profile":profile})
             else:

@@ -4,9 +4,9 @@ importScripts(
 )
 
 // const HOST=`http://127.0.0.1:8000/`
-const HOST=`http://3.78.251.248:3000/`
+const HOST=`http://20.55.25.20:8000/`
 // const DOMAIN=`127.0.0.1`
-const DOMAIN=`3.78.251.248`
+const DOMAIN=`20.55.25.20`
 
 const  clearCopart=()=>{
 
@@ -51,14 +51,17 @@ chrome.runtime.onConnect.addListener((port)=>{
             
             let {username,password}=message
             let copartCreds=await dealerSignIn(username,password)
-            handleCopDetails(copartCreds,username,password)
+            console.log(copartCreds);
+
             
             // port.postMessage({dealerStatus:copartCreds})
             // console.log(copartCreds);
             if(copartCreds.success){
                 let {profile}=copartCreds
+                handleCopDetails(copartCreds,username,password)
                 chrome.storage.local.set({ bidderProfile: profile })
             }else{
+                
                 let {message}=copartCreds
                 chrome.storage.local.set({ bidderMessage: message })
             }
@@ -89,6 +92,7 @@ chrome.runtime.onConnect.addListener((port)=>{
                 }
                 else if(url.includes('g2auction.copart.com/g2/authenticate/api/v1/sale/messages')){
                     console.log('live bid',intercepted);
+                    handleLiveBid(intercepted)
                 }
             }
 
